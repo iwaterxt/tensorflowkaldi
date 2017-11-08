@@ -104,7 +104,7 @@ class Trainer(object):
                     1.0) * learning_rate_fact
                
                 #create the optimizer
-                optimizer = tf.train.AdadeltaOptimizer(learning_rate)
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 
             #for every parameter create a variable that holds its gradients
             with tf.variable_scope('gradients'):
@@ -183,7 +183,6 @@ class Trainer(object):
                 self.update_valid_loss= tf.group(*([block_loss.assign_add(valid_loss), 
                                                                 block_acc.assign_add(valid_acc), update_num_frames]))
 
-
             #operation to compute the average loss in the batch
             self.average_loss = block_loss/tf.cast(num_frames, tf.float32)
 
@@ -245,7 +244,7 @@ class Trainer(object):
         '''
 
         self.summarywriter = tf.summary.FileWriter(logdir=logdir,
-                                                    graph=self.graph)
+            graph=self.graph)
 
     # 计算每一个变量梯度的平均值。
     def average_gradients(tower_grads):
@@ -258,11 +257,11 @@ class Trainer(object):
             for g, _ in grad_and_vars:
                 expanded_g = tf.expand_dims(g, 0)
                 grads.append(expanded_g)
-            grad = tf.concat(grads, 0)
-            grad = tf.reduce_mean(grad, 0)
+                grad = tf.concat(grads, 0)
+                grad = tf.reduce_mean(grad, 0)
 
-            v = grad_and_vars[0][1]
-            grad_and_var = (grad, v)
+                v = grad_and_vars[0][1]
+                grad_and_var = (grad, v)
             # 将变量和它的平均梯度对应起来。
             average_grads.append(grad_and_var)
         # 返回所有变量的平均梯度，这个将被用于变量的更新。
@@ -366,6 +365,7 @@ class Trainer(object):
             tower_acc = []
             for i in range(N_GPU):
                 with tf.device('/gpu:%d' % i):
+
                     Block_loss, Block_acc, _= self.update_valid_loss.run(
                             feed_dict={self.inputs:batch_inputs[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,],
                                     self.targets:batch_targets[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,]})

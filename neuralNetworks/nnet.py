@@ -60,7 +60,6 @@ class Nnet(object):
         elif self.conf['nonlin'] == 'linear':
             activation = classifiers.activation.TfActivation(activation,
                                                              lambda(x): x)
-
         else:
             raise Exception('unkown nonlinearity')
 
