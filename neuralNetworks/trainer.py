@@ -314,33 +314,34 @@ class Trainer(object):
         Returns:
             the loss of the dev data
         '''
-        num_blocks = 0
+        with tf.Graph().as_default():
+            num_blocks = 0
 
-        hd5f = h5py.File(dev_hd5f_file, 'r')
+            hd5f = h5py.File(dev_hd5f_file, 'r')
  
-        num_batchs = hd5f['data'].len() / self.minibatch_size
-        input_dim = hd5f['data'].shape[1] - 1
+            num_batchs = hd5f['data'].len() / self.minibatch_size
+            input_dim = hd5f['data'].shape[1] - 1
 
-        #feed in the batches one by one and accumulate the gradients and loss
-        for k in range(num_batchs):
-            batch_inputs = hd5f['data'][k*self.minibatch_size:
+            #feed in the batches one by one and accumulate the gradients and loss
+            for k in range(num_batchs):
+                batch_inputs = hd5f['data'][k*self.minibatch_size:
                                         (k+1)*self.minibatch_size,
                                         0:input_dim]
 
-            batch_targets = hd5f['data'][k*self.minibatch_size:
+                batch_targets = hd5f['data'][k*self.minibatch_size:
                                         (k+1)*self.minibatch_size, input_dim:input_dim+1]
-            batch_targets = np.reshape(batch_targets, (self.minibatch_size, 1))
+                batch_targets = np.reshape(batch_targets, (self.minibatch_size, 1))
 
-            for i in range(N_GPU):
-                with tf.device('/gpu:%d' % i):
-                    #with tf.name_scope('GPU_%d' % i) as scope:
-                        self.update_valid_loss.run(
-                            feed_dict={self.inputs:batch_inputs[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,],
-                                    self.targets:batch_targets[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,]})
+                for i in range(N_GPU):
+                    with tf.device('/gpu:%d' % i):
+                        #with tf.name_scope('GPU_%d' % i) as scope:
+                            self.update_valid_loss.run(
+                                feed_dict={self.inputs:batch_inputs[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,],
+                                        self.targets:batch_targets[i*self.minibatch_size/N_GPU:(i+1)*self.minibatch_size,]})
 
-            if k % 1250 == 0 and k  > 0:
-                print "the block cross entroy loss is: ", valid_loss, " the block Frame Accuracy is: ", valid_acc
-            num_blocks += 1 
+                if k % 1250 == 0 and k  > 0:
+                    print "the block cross entroy loss is: ", valid_loss, " the block Frame Accuracy is: ", valid_acc
+                num_blocks += 1 
         return block_loss/num_blocks
 
     def halve_learning_rate(self):
